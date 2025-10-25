@@ -50,17 +50,17 @@ export default function CredibilitySection() {
             Built on World-Class Technology
           </h2>
           <p className="text-xl text-white/70 max-w-2xl mx-auto">
-            Powered by cutting-edge AI and recognized innovation
+            Powered by cutting-edge AI to deliver intelligent, context-aware assistance
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
+        <div className="max-w-3xl mx-auto mb-20">
           {/* NVIDIA Badge */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            initial={{ opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
-            whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
             className="group relative"
           >
             <div className="relative h-full p-8 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:border-green-500/50 transition-all duration-300 overflow-hidden">
@@ -76,7 +76,7 @@ export default function CredibilitySection() {
                 }}
                 style={{ backgroundSize: '200% 200%' }}
               />
-              
+
               <div className="relative flex flex-col items-center text-center">
                 <motion.div
                   className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-6 shadow-lg shadow-green-500/30"
@@ -94,7 +94,7 @@ export default function CredibilitySection() {
                 >
                   <Cpu className="w-10 h-10 text-white" />
                 </motion.div>
-                
+
                 <h3 className="text-2xl font-bold text-white mb-3">
                   NVIDIA Nemotron 70B
                 </h3>
@@ -115,80 +115,6 @@ export default function CredibilitySection() {
                 {/* NVIDIA branding accent */}
                 <div className="mt-6 px-4 py-2 rounded-full bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-medium">
                   AI Technology Partner
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Hackathon Badge */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-            className="group relative"
-          >
-            <div className="relative h-full p-8 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:border-[oklch(0.75_0.15_75)]/50 transition-all duration-300 overflow-hidden">
-              {/* Animated glow effect */}
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-[oklch(0.75_0.15_75)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                animate={{
-                  backgroundPosition: ['0% 0%', '100% 100%'],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                }}
-                style={{ backgroundSize: '200% 200%' }}
-              />
-              
-              <div className="relative flex flex-col items-center text-center">
-                <motion.div
-                  className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[oklch(0.75_0.15_75)] to-[oklch(0.65_0.18_285)] flex items-center justify-center mb-6 shadow-lg shadow-[oklch(0.75_0.15_75)]/30"
-                  animate={{
-                    boxShadow: [
-                      '0 10px 30px rgba(244, 166, 56, 0.3)',
-                      '0 10px 40px rgba(244, 166, 56, 0.5)',
-                      '0 10px 30px rgba(244, 166, 56, 0.3)',
-                    ],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                  }}
-                >
-                  <Award className="w-10 h-10 text-black" />
-                </motion.div>
-                
-                <h3 className="text-2xl font-bold text-white mb-3">
-                  NVIDIA AI Hackathon
-                </h3>
-                <p className="text-white/70 leading-relaxed mb-6">
-                  Recognized for innovation and excellence in AI-powered creative tools at the NVIDIA AI Hackathon
-                </p>
-
-                {/* Achievement highlights */}
-                <div className="w-full space-y-3">
-                  {[
-                    'Best AI Integration',
-                    'Innovation Award',
-                    'Community Choice',
-                  ].map((achievement, i) => (
-                    <motion.div
-                      key={achievement}
-                      className="p-3 rounded-lg bg-white/5 border border-white/10"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={isInView ? { opacity: 1, x: 0 } : {}}
-                      transition={{ delay: 0.6 + i * 0.1 }}
-                    >
-                      <p className="text-sm text-white/80">🏆 {achievement}</p>
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Winner badge */}
-                <div className="mt-6 px-4 py-2 rounded-full bg-[oklch(0.75_0.15_75)]/20 border border-[oklch(0.75_0.15_75)]/30 text-[oklch(0.75_0.15_75)] text-sm font-medium">
-                  🏆 Award Winner
                 </div>
               </div>
             </div>

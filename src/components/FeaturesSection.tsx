@@ -8,18 +8,18 @@ import { useRef } from 'react';
 const features = [
   {
     icon: Wand2,
-    title: 'Natural Language Control',
-    description: 'Edit your videos by simply speaking or typing commands. No complex shortcuts or menus to navigate.',
+    title: 'Step-by-Step Guidance',
+    description: 'Ask how to do anything in DaVinci Resolve and get clear, actionable instructions on what buttons to click.',
   },
   {
     icon: Brain,
     title: 'AI-Powered Understanding',
-    description: 'Built with NVIDIA Nemotron 70B, Maestro understands context and intent, making editing intuitive.',
+    description: 'Built with NVIDIA Nemotron 70B, the chatbot understands your editing goals and provides contextual help.',
   },
   {
     icon: Zap,
-    title: 'Lightning Fast Workflow',
-    description: 'Speed up your editing process by 10x. Focus on creativity while Maestro handles the technical details.',
+    title: 'Learn While You Edit',
+    description: 'Speed up your workflow by getting instant answers. No more searching through tutorials or documentation.',
   },
 ];
 
@@ -49,10 +49,10 @@ export default function FeaturesSection() {
           className="text-center mb-20"
         >
           <h2 className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-[oklch(0.45_0.2_280)] to-[oklch(0.65_0.18_285)] bg-clip-text text-transparent">
-            🎼 Orchestrate Your Vision
+            💬 Your Personal Editing Coach
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Maestro brings the power of AI to DaVinci Resolve, transforming how you create.
+            Get instant help and guidance for any task in DaVinci Resolve through an intelligent chat interface.
           </p>
         </motion.div>
 
