@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Download, Mic, Sparkles } from 'lucide-react';
+import { Download, MessageCircle, Sparkles } from 'lucide-react';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 
@@ -9,19 +9,19 @@ const steps = [
   {
     icon: Download,
     title: 'Download Plugin',
-    description: 'Install the Maestro plugin for DaVinci Resolve in seconds. Compatible with version 18+.',
+    description: 'Install the chat assistant plugin for DaVinci Resolve in seconds. Compatible with version 18+.',
     number: '01',
   },
   {
-    icon: Mic,
-    title: 'Speak Your Command',
-    description: 'Give natural language commands through Maestro\'s interface. No complex syntax required.',
+    icon: MessageCircle,
+    title: 'Ask Your Question',
+    description: 'Type your question or describe what you want to do. The AI understands natural language.',
     number: '02',
   },
   {
     icon: Sparkles,
-    title: 'Watch Magic Happen',
-    description: 'Maestro conducts your edit seamlessly in real-time with AI precision and speed.',
+    title: 'Follow the Guidance',
+    description: 'Get step-by-step instructions on exactly what buttons to click and settings to adjust.',
     number: '03',
   },
 ];
@@ -50,7 +50,7 @@ export default function HowItWorksSection() {
             How It Works
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Three simple steps to revolutionize your editing workflow
+            Get started with your AI editing assistant in three simple steps
           </p>
         </motion.div>
 
@@ -140,7 +140,7 @@ export default function HowItWorksSection() {
                             <Icon className="w-16 h-16 text-white" />
                           </motion.div>
                         ) : index === 1 ? (
-                          // Microphone with sound waves
+                          // Chat bubble with pulsing effect
                           <div className="relative">
                             <Icon className="w-16 h-16 text-white relative z-10" />
                             {[...Array(3)].map((_, i) => (

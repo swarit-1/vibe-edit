@@ -6,11 +6,11 @@ import { Sparkles, Play } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const commandExamples = [
-  "Cut to the next scene",
-  "Add a slow-motion effect",
-  "Color grade this warmer",
-  "Transition with a fade",
-  "Speed up this section by 2x",
+  "Click the Export button",
+  "Adjust the color grading panel",
+  "Open the timeline settings",
+  "Apply the transition effect",
+  "Navigate to the media pool",
 ];
 
 // Musical note characters
@@ -148,14 +148,14 @@ export default function HeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <Sparkles className="w-4 h-4 text-[oklch(0.75_0.15_75)]" />
-            <span className="text-sm text-white/90">AI-Powered Video Editing</span>
+            <span className="text-sm text-white/90">AI-Powered Editing Assistant</span>
           </motion.div>
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-            Conduct Your Edit
+            Your AI Guide
             <br />
             <span className="relative inline-block">
-              Like a{' '}
+              for{' '}
               <motion.span
                 className="relative inline-block bg-gradient-to-r from-[oklch(0.75_0.15_75)] via-[oklch(0.85_0.15_75)] to-[oklch(0.75_0.15_75)] bg-clip-text text-transparent"
                 animate={{
@@ -170,13 +170,13 @@ export default function HeroSection() {
                   backgroundSize: '200% auto',
                 }}
               >
-                Maestro
+                DaVinci Resolve
               </motion.span>
-              {/* Conductor's baton icon */}
+              {/* Chat icon */}
               <motion.span
                 className="inline-block ml-4 text-[oklch(0.75_0.15_75)]"
                 animate={{
-                  rotate: [-15, 15, -15],
+                  scale: [1, 1.1, 1],
                 }}
                 transition={{
                   duration: 2,
@@ -184,13 +184,13 @@ export default function HeroSection() {
                   ease: 'easeInOut',
                 }}
               >
-                🎼
+                💬
               </motion.span>
             </span>
           </h1>
 
           <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto">
-            Transform DaVinci Resolve with natural language commands. Edit videos as naturally as conducting an orchestra.
+            A smart chat assistant that guides you through DaVinci Resolve, telling you exactly what buttons to click and how to make edits.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">

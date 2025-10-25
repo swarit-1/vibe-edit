@@ -5,8 +5,8 @@ import ErrorReporter from "@/components/ErrorReporter";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Maestro - AI-Powered DaVinci Resolve Plugin",
-  description: "Transform DaVinci Resolve with natural language commands. Edit videos as naturally as conducting an orchestra with AI-powered precision.",
+  title: "DaVinci Resolve AI Assistant - Smart Chat Plugin",
+  description: "An intelligent chat assistant for DaVinci Resolve that guides you step-by-step, telling you exactly what buttons to click and how to make edits.",
 };
 
 export default function RootLayout({
