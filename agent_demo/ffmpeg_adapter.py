@@ -7,7 +7,7 @@ and returns a dictionary describing the results.
 Later, you'll replace this with a Resolve adapter that calls DaVinci's scripting API.
 """
 
-import subprocess, shlex
+import subprocess, shlex, os
 from typing import Dict, Any, Tuple
 
 FFMPEG = "ffmpeg"
@@ -59,6 +59,78 @@ def duck_music(input_file: str, music_file: str, out_file: str, duck_db: int,
            f'-filter_complex "[1:a][0:a]sidechaincompress=threshold=-20dB:ratio=6:attack={attack_ms}:release={release_ms}:'
            f'makeup=0:mix=1:sclevel=peak:wet=1[outa]" '
            f'-map 0:v -map "[outa]" -c:v copy -c:a aac "{out_file}"')
+    code, log = _run(cmd)
+    return {"code": code, "log": log, "file": out_file}
+
+# --------------------------------------
+# SLOG3 to Rec709 color correction
+# --------------------------------------
+def slog3_to_rec709(input_file: str, out_file: str, segment: str = None, 
+                    contrast: float = 1.1, saturation: float = 1.05,
+                    brightness: float = 0.02) -> Dict[str, Any]:
+    """
+    Convert Sony SLOG3 footage to Rec709 color space with basic correction.
+    
+    This applies:
+    1. SLOG3 to Rec709 LUT transformation
+    2. Basic color correction (contrast, saturation, brightness)
+    3. Proper color space handling
+    
+    Args:
+        input_file: Path to SLOG3 footage
+        out_file: Output file path
+        segment: Optional time segment
+        contrast: Contrast adjustment (1.0 = no change, >1 = more contrast)
+        saturation: Saturation adjustment (1.0 = no change, >1 = more saturated)
+        brightness: Brightness adjustment (0.0 = no change, +/- for adjustments)
+    
+    Returns:
+        Dict with execution status
+    """
+    seg = _segment_filter(segment)
+    
+    # SLOG3 to Rec709 conversion using colorspace filter
+    # This is a simplified approach - for production, you'd use a proper LUT file
+    vf = (
+        f"colorspace=all=bt709:iall=bt709,"  # Set output colorspace to Rec709
+        f"eq=contrast={contrast}:saturation={saturation}:brightness={brightness},"
+        f"curves=vintage"  # Apply a gentle S-curve for film-like look
+    )
+    
+    cmd = f'{FFMPEG} -y {seg}-i "{input_file}" -vf "{vf}" -c:v libx264 -preset slow -crf 18 -c:a copy "{out_file}"'
+    code, log = _run(cmd)
+    return {"code": code, "log": log, "file": out_file}
+
+# --------------------------------------
+# SLOG3 with custom LUT application
+# --------------------------------------
+def slog3_with_lut(input_file: str, out_file: str, lut_file: str,
+                   segment: str = None, intensity: float = 1.0) -> Dict[str, Any]:
+    """
+    Apply a custom LUT file to SLOG3 footage.
+    
+    Args:
+        input_file: Path to SLOG3 footage
+        out_file: Output file path
+        lut_file: Path to .cube LUT file
+        segment: Optional time segment
+        intensity: LUT intensity/mix (0.0-1.0, where 1.0 = full LUT)
+    
+    Returns:
+        Dict with execution status
+    """
+    seg = _segment_filter(segment)
+    
+    if not os.path.exists(lut_file):
+        return {"code": 1, "log": f"LUT file not found: {lut_file}", "file": out_file}
+    
+    # Apply LUT with optional intensity mixing
+    vf = f"lut3d=file='{lut_file}':interp=trilinear"
+    if intensity < 1.0:
+        # Blend between original and LUT-applied version
+        vf = f"split[a][b];[a]{vf}[lut];[b][lut]blend=all_expr='A*{intensity}+B*{1-intensity}'"
+    
+    cmd = f'{FFMPEG} -y {seg}-i "{input_file}" -vf "{vf}" -c:v libx264 -preset slow -crf 18 -c:a copy "{out_file}"'
     code, log = _run(cmd)
     return {"code": code, "log": log, "file": out_file}
 

@@ -10,7 +10,7 @@ It also chains outputs: the result of step N becomes the input for step N+1.
 import os
 from typing import Dict, Callable
 from .types import Plan, ExecResult
-from adapters import ffmpeg_adapter as fx  # can swap to resolve_adapter later
+from agent_demo import ffmpeg_adapter as fx  # can swap to resolve_adapter later
 
 class Executor:
     def __init__(self, input_file: str, segment: str = None, music: str = None, out_dir: str = "outputs"):
@@ -25,6 +25,8 @@ class Executor:
             "adjust_color_eq": self._do_adjust_color_eq,
             "add_keyframe_zoom": self._do_add_keyframe_zoom,
             "duck_music": self._do_duck_music,
+            "slog3_to_rec709": self._do_slog3_to_rec709,
+            "slog3_with_lut": self._do_slog3_with_lut,
             "export_preview": self._do_export_preview,
         }
 
@@ -83,6 +85,29 @@ class Executor:
                              attack_ms=p.get("attack_ms", 200),
                              release_ms=p.get("release_ms", 800),
                              segment=self.segment)
+        status = "ok" if meta["code"] == 0 else "error"
+        return ExecResult(step_id=f"S{i}", status=status, outputs={"file": out, "log": meta["log"]},
+                          error=None if status=="ok" else "ffmpeg error")
+
+    def _do_slog3_to_rec709(self, i: int, p: dict) -> ExecResult:
+        out = self._outfile("slog3_corrected", i)
+        meta = fx.slog3_to_rec709(self.curr_file, out,
+                                  segment=self.segment,
+                                  contrast=p.get("contrast", 1.1),
+                                  saturation=p.get("saturation", 1.05),
+                                  brightness=p.get("brightness", 0.02))
+        status = "ok" if meta["code"] == 0 else "error"
+        return ExecResult(step_id=f"S{i}", status=status, outputs={"file": out, "log": meta["log"]},
+                          error=None if status=="ok" else "ffmpeg error")
+
+    def _do_slog3_with_lut(self, i: int, p: dict) -> ExecResult:
+        out = self._outfile("slog3_lut", i)
+        lut_file = p.get("lut_file")
+        if not lut_file:
+            return ExecResult(step_id=f"S{i}", status="error", outputs={}, error="lut_file not provided")
+        meta = fx.slog3_with_lut(self.curr_file, out, lut_file,
+                                segment=self.segment,
+                                intensity=p.get("intensity", 1.0))
         status = "ok" if meta["code"] == 0 else "error"
         return ExecResult(step_id=f"S{i}", status=status, outputs={"file": out, "log": meta["log"]},
                           error=None if status=="ok" else "ffmpeg error")
