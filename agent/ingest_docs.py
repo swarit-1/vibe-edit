@@ -21,7 +21,7 @@ from langchain_community.vectorstores import FAISS  # FAISS: high-speed vector s
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings  # NVIDIA embedding model for text-to-vector conversion
 
 # Load environment variables from .env file in the project root
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 
 
@@ -29,11 +29,11 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.en
 # Path Configuration
 # --------------------------------------------------------------------------
 # Input PDFs (DaVinci Resolve manuals)
-PDF_DIR = "./data/pdfs"
+PDF_DIR = "./code/data/pdfs"
 # Extracted plain-text output directory
-TXT_DIR = "./data/resolve"
+TXT_DIR = "./code/data/resolve"
 # Output directory for the FAISS vectorstore
-VSTORE_DIR = "./vectorstore"
+VSTORE_DIR = "./code/vectorstore"
 
 # Create necessary directories if they do not exist
 os.makedirs(TXT_DIR, exist_ok=True)
@@ -101,7 +101,10 @@ for file in os.listdir(PDF_DIR):
 # Load Text as LangChain Documents
 # --------------------------------------------------------------------------
 print("\nLoading text documents into memory...")
-loader = DirectoryLoader(TXT_DIR, glob="**/*.txt", loader_cls=TextLoader)
+# Use UTF-8 encoding for text loader to handle special characters
+from functools import partial
+TextLoaderUTF8 = partial(TextLoader, encoding='utf-8')
+loader = DirectoryLoader(TXT_DIR, glob="**/*.txt", loader_cls=TextLoaderUTF8)
 docs = loader.load()
 print(f"Loaded {len(docs)} text file(s).")
 
