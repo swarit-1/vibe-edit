@@ -4,7 +4,7 @@ Implements each video-editing 'tool' using FFmpeg command-line calls.
 Each function performs one editing action (color grade, zoom, duck music, etc.)
 and returns a dictionary describing the results.
 
-Later, you'll replace this with a Resolve adapter that calls DaVinci's scripting API.
+Later, we'll replace this with a Resolve adapter that calls DaVinci's scripting API.
 """
 
 import subprocess, shlex, os
