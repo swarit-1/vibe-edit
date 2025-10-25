@@ -25,7 +25,6 @@ class Plan:
 
 
 # Describes user intent and context
-
 @dataclass
 class TaskSpec:
     goal: str                      # what the user wants (in plain language)

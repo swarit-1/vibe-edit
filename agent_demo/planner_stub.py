@@ -3,7 +3,7 @@ This is a rule-based 'fake planner' that simulates Nemotron.
 It looks at the user's goal text and decides what sequence of steps to take.
 Each step is one action from the tool vocabulary (color, zoom, duck music, etc.).
 
-Later, you'll replace this file with `planner_nemotron.py`, where Nemotron
+Later, we'll replace this file with `planner_nemotron.py`, where Nemotron
 produces the same Plan structure through function-calling.
 """
 
