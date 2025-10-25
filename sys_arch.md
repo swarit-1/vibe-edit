@@ -1,39 +1,3 @@
-Yes — 💯 putting this in your **repo as a Markdown doc** is *definitely* the better move.
-Here’s why — and how I’d recommend structuring it:
-
----
-
-### 🧩 Why Markdown > Google Doc (for your hackathon repo)
-
-| Benefit                                 | Explanation                                                                                                                                    |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Version control**                     | Markdown files live alongside your code, so any change in architecture is tracked in Git. You can PR, diff, and review updates just like code. |
-| **Transparency for judges & teammates** | Hackathon judges can open `ARCHITECTURE.md` or `README.md` directly on GitHub — no link-hopping or permission issues.                          |
-| **Better integration with diagrams**    | You can embed the Mermaid diagram directly (GitHub now renders Mermaid natively).                                                              |
-| **Future scalability**                  | If you extend this project post-hackathon, the doc grows with your repo, not in a separate Google Drive silo.                                  |
-| **Documentation consistency**           | Keeps all design rationale, setup instructions, and architecture diagrams in one place.                                                        |
-
----
-
-### ✅ Recommended file layout
-
-```
-repo/
-├── README.md                # High-level overview, how to run demo
-├── ARCHITECTURE.md          # Full system architecture and workflow (Nemotron + DaVinci)
-├── video_agent_mvp.py       # Core Python script or prototype
-├── adapters/                # Tool adapters (DaVinci, MoviePy)
-├── assets/                  # Diagrams, screenshots, demo images
-└── requirements.txt
-```
-
----
-
-### 📘 What to include in `ARCHITECTURE.md`
-
-Here’s a ready-to-paste structure you can use right now:
-
-````markdown
 # Agentic Video Editing Assistant — System Architecture & Workflow
 
 ## Overview
