@@ -13,6 +13,16 @@ __pycache__/
 dist/
 build/
 
+# Ignore data and binary assets
+*.pdf
+*.faiss
+*.pkl
+*.pt
+*.ckpt
+data/
+vectorstore/
+
+
 # Environment variables
 .env
 
