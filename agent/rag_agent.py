@@ -1,6 +1,7 @@
 import logging
+import os
 from pathlib import Path
-
+from dotenv import load_dotenv
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
@@ -22,26 +23,32 @@ LLM_MODEL = "nvidia/nemotron-mini-4b-instruct" # for prototype
 RETRIEVER_EMBEDDING_MODEL = "nvidia/llama-3.2-nv-embedqa-1b-v2"
 RETRIEVER_RERANK_MODEL = "nvidia/llama-3.2-nv-rerankqa-1b-v2"
 
-# Read the data
-_LOGGER.info(f"Reading knowledge base data from {DATA_DIR}")
-data_loader = DirectoryLoader(
-    DATA_DIR,
-    glob="**/*",
-    loader_cls=TextLoader,
-    show_progress=True,
-)
-docs = data_loader.load()
+# Load your existing FAISS vectorstore
+load_dotenv()
 
-# Split the data into chunks and ingest into FAISS vector database
-_LOGGER.info(f"Ingesting {len(docs)} documents into FAISS vector database.")
-splitter = ...
-chunks = splitter.split_documents(docs)
-embeddings = ...
-vectordb = FAISS.from_documents(chunks, embeddings)  # type: ignore
+VSTORE_DIR = "./vectorstore"  # same folder used in ingest_docs.py
+EMBED_MODEL = "nvidia/llama-3.2-nv-embedqa-1b-v2"
+
+embeddings = NVIDIAEmbeddings(
+    model=EMBED_MODEL,
+    truncate="END",
+    nvidia_api_key=os.getenv("NGC_API_KEY")
+)
+
+vectordb = FAISS.load_local(
+    VSTORE_DIR,
+    embeddings,
+    allow_dangerous_deserialization=True
+)
+
+kb_retriever = vectordb.as_retriever(
+    search_type="similarity",
+    search_kwargs={"k": 6}
+)
 
 # Create a document retriever and reranker
 kb_retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": 6})
-reranker = ...
+reranker = NVIDIARerank(model=RETRIEVER_RERANK_MODEL)
 
 # combine those to create the final document retriever
 RETRIEVER = ContextualCompressionRetriever(
@@ -60,6 +67,7 @@ RETRIEVER_TOOL = create_retriever_tool(
 
 # Define the LLM model to be used for this agent
 llm = ...
+llm = ChatNVIDIA(model="nvidia/nemotron-mini-4b-instruct", temperature=0.7, api_key = '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')
 
 # Define the system prompt for the agent
 SYSTEM_PROMPT = (
