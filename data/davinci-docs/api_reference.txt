@@ -1,0 +1,197 @@
+# DaVinci Resolve Python API Quick Reference
+
+## Getting Started
+
+Basic connection to DaVinci Resolve:
+
+```python
+import DaVinciResolveScript as dvr_script
+resolve = dvr_script.scriptapp("Resolve")
+project = resolve.GetProjectManager().GetCurrentProject()
+timeline = project.GetCurrentTimeline()
+```
+
+## Core Objects
+
+### Resolve
+- `GetProjectManager()` - Returns ProjectManager object
+- `GetMediaStorage()` - Returns MediaStorage object
+- `GetVersion()` - Returns version string
+- `OpenPage(pageName)` - Switch to page: 'media', 'cut', 'edit', 'fusion', 'color', 'fairlight', 'deliver'
+
+### ProjectManager
+- `GetCurrentProject()` - Returns current Project object
+
+### Project
+- `GetCurrentTimeline()` - Returns current Timeline object
+- `GetMediaPool()` - Returns MediaPool object
+- `GetName()` - Returns project name
+
+### Timeline
+- `GetCurrentVideoItem()` - Returns current TimelineItem (clip)
+- `GetItemListInTrack(trackType, index)` - Returns list of items in track
+- `GetTrackCount(trackType)` - Returns number of tracks ('audio', 'video', 'subtitle')
+- `GetName()` - Returns timeline name
+- `GetCurrentTimecode()` - Returns current playhead timecode
+
+### TimelineItem (Clip)
+- `GetNodeGraph()` - Returns Graph object for color nodes
+- `GetName()` - Returns clip name
+- `GetMediaPoolItem()` - Returns source MediaPoolItem
+- `SetCDL(cdlMap)` - Apply Color Decision List
+- `GetProperty(propertyKey)` - Get clip property
+- `SetProperty(propertyKey, propertyValue)` - Set clip property
+
+### Graph (Node Graph)
+- `GetNumNodes()` - Returns number of nodes in the graph
+- `SetLUT(nodeIndex, lutPath)` - Apply LUT to node (1-indexed)
+- `GetLUT(nodeIndex)` - Get LUT path from node
+- `SetNodeEnabled(nodeIndex, isEnabled)` - Enable/disable node
+- `GetNodeLabel(nodeIndex)` - Get node label
+
+## Common Operations
+
+### Get Current Clip
+```python
+current_clip = timeline.GetCurrentVideoItem()
+if not current_clip:
+    print("No clip selected")
+```
+
+### Access Color Nodes
+```python
+node_graph = current_clip.GetNodeGraph()
+num_nodes = node_graph.GetNumNodes()
+print(f"This clip has {num_nodes} nodes")
+```
+
+### Apply LUT
+```python
+# nodeIndex is 1-based (1, 2, 3, etc.)
+node_graph.SetLUT(nodeIndex=1, lutPath="/path/to/lut.cube")
+
+# Or relative path (from custom LUT folders or master LUT path)
+node_graph.SetLUT(1, "Cinematic/Teal_Orange.cube")
+```
+
+### Apply CDL (Color Decision List)
+```python
+current_clip.SetCDL({
+    "NodeIndex": 1,               # 1-based index
+    "Slope": "1.2 1.1 1.0",      # RGB multipliers (highlights)
+    "Offset": "0.0 0.0 0.0",     # RGB additions (shadows)
+    "Power": "1.0 1.0 1.0",      # RGB gamma (midtones)
+    "Saturation": "1.1"          # Overall saturation
+})
+```
+
+### Get Clip Properties
+```python
+# Get all properties
+props = current_clip.GetProperty()
+
+# Get specific property
+zoom_x = current_clip.GetProperty("ZoomX")
+```
+
+### Set Clip Properties
+```python
+# Pan and tilt
+current_clip.SetProperty("Pan", 0.5)
+current_clip.SetProperty("Tilt", -0.2)
+
+# Zoom
+current_clip.SetProperty("ZoomX", 1.2)
+current_clip.SetProperty("ZoomY", 1.2)
+
+# Rotation
+current_clip.SetProperty("RotationAngle", 15.0)
+```
+
+## Timeline Operations
+
+### Get All Clips in Timeline
+```python
+# Get video clips on track 1
+video_clips = timeline.GetItemListInTrack("video", 1)
+
+for clip in video_clips:
+    print(clip.GetName())
+```
+
+### Navigate Timeline
+```python
+# Get current timecode
+tc = timeline.GetCurrentTimecode()
+print(f"Current position: {tc}")
+
+# Set playhead position
+timeline.SetCurrentTimecode("01:00:00:00")
+```
+
+## MediaPool Operations
+
+### Get Media Pool
+```python
+media_pool = project.GetMediaPool()
+current_folder = media_pool.GetCurrentFolder()
+```
+
+### Get Clips in Folder
+```python
+clips = current_folder.GetClipList()
+for clip in clips:
+    print(clip.GetName())
+```
+
+## Color Page Specific
+
+### Check if on Color Page
+```python
+current_page = resolve.GetCurrentPage()
+if current_page != "color":
+    resolve.OpenPage("color")
+```
+
+### Working with Multiple Nodes
+```python
+graph = current_clip.GetNodeGraph()
+num_nodes = graph.GetNumNodes()
+
+# Apply different LUTs to different nodes
+for i in range(1, num_nodes + 1):
+    label = graph.GetNodeLabel(i)
+    print(f"Node {i}: {label}")
+```
+
+## Error Handling
+
+Always check if objects exist:
+
+```python
+resolve = dvr_script.scriptapp("Resolve")
+if not resolve:
+    raise RuntimeError("Could not connect to DaVinci Resolve")
+
+project = resolve.GetProjectManager().GetCurrentProject()
+if not project:
+    raise RuntimeError("No project is open")
+
+timeline = project.GetCurrentTimeline()
+if not timeline:
+    raise RuntimeError("No timeline is open")
+
+current_clip = timeline.GetCurrentVideoItem()
+if not current_clip:
+    raise RuntimeError("No clip is selected")
+```
+
+## Best Practices
+
+1. Always validate object existence before use
+2. Use 1-based indexing for nodes (not 0-based)
+3. Provide relative LUT paths when possible
+4. Use CDL for parametric adjustments
+5. Use LUTs for look application
+6. Check current page before page-specific operations
+7. Use meaningful node labels for organization

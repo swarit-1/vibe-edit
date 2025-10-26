@@ -1,0 +1,740 @@
+# DaVinci Resolve API Troubleshooting Guide
+
+## Connection Issues
+
+### Problem: "Could not connect to Resolve"
+### User Question: "Why can't I connect to DaVinci Resolve?"
+### Solution:
+```python
+import DaVinciResolveScript as dvr_script
+
+resolve = dvr_script.scriptapp("Resolve")
+if not resolve:
+    print("Troubleshooting steps:")
+    print("1. Ensure DaVinci Resolve is running")
+    print("2. Check that you're using DaVinci Resolve Studio (not free version)")
+    print("3. Verify environment variables are set correctly:")
+    print("   - RESOLVE_SCRIPT_API")
+    print("   - RESOLVE_SCRIPT_LIB")
+    print("   - PYTHONPATH")
+```
+
+### Environment Variable Check:
+```python
+import os
+
+# Check environment variables
+script_api = os.getenv("RESOLVE_SCRIPT_API")
+script_lib = os.getenv("RESOLVE_SCRIPT_LIB")
+python_path = os.getenv("PYTHONPATH")
+
+print(f"RESOLVE_SCRIPT_API: {script_api}")
+print(f"RESOLVE_SCRIPT_LIB: {script_lib}")
+print(f"PYTHONPATH includes Resolve: {'Resolve' in (python_path or '')}")
+
+if not script_api:
+    print("\n⚠️ Set environment variable:")
+    print('export RESOLVE_SCRIPT_API="/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting"')
+```
+
+---
+
+## No Project Open
+
+### Problem: GetCurrentProject() returns None
+### User Question: "Why is there no project?"
+### Solution:
+```python
+project_manager = resolve.GetProjectManager()
+project = project_manager.GetCurrentProject()
+
+if not project:
+    print("No project is currently open in DaVinci Resolve")
+    print("Please open a project in Resolve first")
+    
+    # List available projects
+    projects = project_manager.GetProjectListInCurrentFolder()
+    if projects:
+        print(f"\nAvailable projects: {projects}")
+        print("You can load one with:")
+        print(f"project = project_manager.LoadProject('{projects[0]}')")
+```
+
+---
+
+## No Timeline Open
+
+### Problem: GetCurrentTimeline() returns None
+### User Question: "Why can't I access the timeline?"
+### Solution:
+```python
+timeline = project.GetCurrentTimeline()
+
+if not timeline:
+    print("No timeline is currently open")
+    
+    # List available timelines
+    timeline_count = project.GetTimelineCount()
+    print(f"This project has {timeline_count} timelines")
+    
+    if timeline_count > 0:
+        # Load first timeline
+        timeline = project.GetTimelineByIndex(1)
+        project.SetCurrentTimeline(timeline)
+        print(f"Loaded timeline: {timeline.GetName()}")
+```
+
+---
+
+## No Clip Selected
+
+### Problem: GetCurrentVideoItem() returns None
+### User Question: "Why can't I modify the clip?"
+### Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+
+if not clip:
+    print("No clip is selected on the timeline")
+    print("Solutions:")
+    print("1. Click on a clip in the timeline in DaVinci Resolve")
+    print("2. Or use GetItemListInTrack to get all clips:")
+    
+    # Get first clip on video track 1
+    clips = timeline.GetItemListInTrack("video", 1)
+    if clips and len(clips) > 0:
+        clip = clips[0]
+        print(f"Using first clip: {clip.GetName()}")
+```
+
+---
+
+## LUT Not Found
+
+### Problem: SetLUT() returns False or fails
+### User Question: "Why won't my LUT apply?"
+### Solution:
+```python
+graph = clip.GetNodeGraph()
+
+# First, refresh LUT list
+project.RefreshLUTList()
+
+# Try applying LUT
+lut_path = "MyFolder/MyLUT.cube"
+result = graph.SetLUT(1, lut_path)
+
+if not result:
+    print(f"LUT not found: {lut_path}")
+    print("\nTroubleshooting:")
+    print("1. Check LUT file exists in one of these locations:")
+    print("   - /Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT/")
+    print("   - Project's custom LUT folder")
+    print("2. Use exact relative path as shown in Resolve UI")
+    print("3. Refresh LUT list: project.RefreshLUTList()")
+    print("4. Try absolute path: /path/to/your/lut.cube")
+```
+
+---
+
+## Wrong Node Index
+
+### Problem: "NodeIndex out of range"
+### User Question: "Why does node index 0 not work?"
+### Solution:
+```python
+# WRONG: Node indices are 1-based, not 0-based
+clip.SetCDL({"NodeIndex": 0, "Saturation": "1.2"})  # ❌ Will fail
+
+# CORRECT: Use 1-based indexing
+clip.SetCDL({"NodeIndex": 1, "Saturation": "1.2"})  # ✅ Works
+
+# Always check node count first
+graph = clip.GetNodeGraph()
+num_nodes = graph.GetNumNodes()
+
+if num_nodes >= 1:
+    clip.SetCDL({"NodeIndex": 1, "Saturation": "1.2"})
+else:
+    print("No nodes in graph - cannot apply grade")
+```
+
+---
+
+## CDL Format Errors
+
+### Problem: SetCDL() fails silently
+### User Question: "Why isn't my CDL applying?"
+### Common Mistakes and Solutions:
+
+```python
+# WRONG: Using floats instead of strings for RGB values
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": 1.2,  # ❌ Should be string
+})
+
+# CORRECT: Use strings for RGB triplets
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.2 1.2 1.2",  # ✅ Three space-separated values
+})
+
+# WRONG: Missing values in RGB triplet
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.2",  # ❌ Needs all 3 RGB values
+})
+
+# CORRECT: Always provide R G B values
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.2 1.2 1.2",  # ✅ R G B
+})
+
+# WRONG: Using incorrect key names
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Contrast": "1.2",  # ❌ No "Contrast" parameter
+})
+
+# CORRECT: Use exact CDL parameter names
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 1.0 1.0",      # Highlights
+    "Offset": "0.0 0.0 0.0",     # Shadows
+    "Power": "1.0 1.0 1.0",      # Midtones (gamma)
+    "Saturation": "1.2"          # Overall saturation (single value)
+})
+```
+
+---
+
+## Not on Color Page
+
+### Problem: Operations fail because not on correct page
+### User Question: "Why can't I access color tools?"
+### Solution:
+```python
+# Some operations require being on the Color page
+current_page = resolve.GetCurrentPage()
+
+if current_page != "color":
+    print(f"Currently on {current_page} page")
+    print("Switching to Color page...")
+    resolve.OpenPage("color")
+    
+    # Verify switch was successful
+    if resolve.GetCurrentPage() == "color":
+        print("✅ Successfully switched to Color page")
+    else:
+        print("❌ Could not switch to Color page")
+```
+
+---
+
+## Property Name Errors
+
+### Problem: SetProperty() fails
+### User Question: "Why won't clip properties change?"
+### Solution:
+```python
+# Get list of all available properties first
+clip = timeline.GetCurrentVideoItem()
+all_props = clip.GetProperty()
+
+print("Available properties:")
+for key, value in all_props.items():
+    print(f"  {key}: {value}")
+
+# WRONG: Using incorrect property name
+clip.SetProperty("Zoom", 1.5)  # ❌ Wrong name
+
+# CORRECT: Use exact property names
+clip.SetProperty("ZoomX", 1.5)  # ✅ Correct
+clip.SetProperty("ZoomY", 1.5)  # ✅ Correct
+```
+
+---
+
+## Value Range Errors
+
+### Problem: Properties not accepting values
+### User Question: "Why is my value being rejected?"
+### Solution:
+```python
+# Each property has specific value ranges:
+
+# Pan: -4.0*width to 4.0*width
+clip.SetProperty("Pan", 0.5)      # ✅ Within range
+clip.SetProperty("Pan", 100.0)    # ❌ Too large
+
+# Tilt: -4.0*height to 4.0*height
+clip.SetProperty("Tilt", -0.3)    # ✅ Within range
+
+# ZoomX/ZoomY: 0.0 to 100.0
+clip.SetProperty("ZoomX", 1.5)    # ✅ Within range
+clip.SetProperty("ZoomX", 150.0)  # ❌ Too large
+
+# RotationAngle: -360.0 to 360.0
+clip.SetProperty("RotationAngle", 45.0)    # ✅ Within range
+clip.SetProperty("RotationAngle", 720.0)   # ❌ Out of range
+
+# Opacity: 0.0 to 100.0
+clip.SetProperty("Opacity", 80.0)   # ✅ Within range
+
+# Always check return value
+success = clip.SetProperty("ZoomX", 1.5)
+if not success:
+    print("Property could not be set - check value range")
+```
+
+---
+
+## Module Import Errors
+
+### Problem: "No module named 'DaVinciResolveScript'"
+### User Question: "Why can't Python find the DaVinci module?"
+### Solution:
+```python
+import sys
+import os
+
+# Add Resolve modules to Python path
+RESOLVE_SCRIPT_API = "/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting"
+sys.path.append(f"{RESOLVE_SCRIPT_API}/Modules/")
+
+# Set library path
+os.environ["RESOLVE_SCRIPT_LIB"] = "/Applications/DaVinci Resolve/DaVinci Resolve.app/Contents/Libraries/Fusion/fusionscript.so"
+
+# Now import should work
+import DaVinciResolveScript as dvr_script
+```
+
+---
+
+## Version Compatibility
+
+### Problem: "Function not available in my version"
+### User Question: "Why doesn't this API call work?"
+### Solution:
+```python
+# Check DaVinci Resolve version
+resolve = dvr_script.scriptapp("Resolve")
+version = resolve.GetVersionString()
+
+print(f"DaVinci Resolve version: {version}")
+print("API features vary by version:")
+print("  v18.0+: Most modern API features")
+print("  v18.5+: Enhanced color page API")
+print("  v19.0+: Additional node graph features")
+print("  v20.0+: Latest features")
+
+# Parse version for feature checks
+major_version = int(version.split('.')[0])
+if major_version < 18:
+    print("⚠️ Some features may not be available - consider upgrading")
+```
+
+---
+
+## Permission Issues
+
+### Problem: "Operation not permitted"
+### User Question: "Why can't I modify this clip?"
+### Common Causes:
+1. **Clip is locked in timeline**
+2. **Track is locked**
+3. **Timeline is being rendered**
+4. **Collaboration mode conflicts**
+
+### Solution:
+```python
+# Check if track is locked
+track_locked = timeline.GetIsTrackLocked("video", 1)
+if track_locked:
+    print("Track 1 is locked - unlock it first")
+    timeline.SetTrackLock("video", 1, False)
+
+# Check if clip is enabled
+clip = timeline.GetCurrentVideoItem()
+is_enabled = clip.GetClipEnabled()
+if not is_enabled:
+    print("Clip is disabled - enable it first")
+    clip.SetClipEnabled(True)
+```
+
+---
+
+## Memory and Performance
+
+### Problem: "Script is slow with many clips"
+### User Question: "How do I optimize for many clips?"
+### Best Practices:
+```python
+# BAD: Connecting to Resolve in a loop
+for i in range(100):
+    resolve = dvr_script.scriptapp("Resolve")  # ❌ Slow!
+    # ... operations
+
+# GOOD: Connect once, reuse connection
+resolve = dvr_script.scriptapp("Resolve")  # ✅ Once
+project = resolve.GetProjectManager().GetCurrentProject()
+timeline = project.GetCurrentTimeline()
+
+clips = timeline.GetItemListInTrack("video", 1)
+for clip in clips:  # ✅ Fast
+    clip.SetCDL({"NodeIndex": 1, "Saturation": "1.1"})
+
+# BAD: Getting timeline items repeatedly
+for i in range(100):
+    clips = timeline.GetItemListInTrack("video", 1)  # ❌ Slow!
+
+# GOOD: Get once, cache result
+clips = timeline.GetItemListInTrack("video", 1)  # ✅ Once
+for clip in clips:
+    # Process clip
+    pass
+```
+
+---
+
+## Testing Connection
+
+### Problem: "Is Resolve actually running and accessible?"
+### User Question: "How do I test if everything is set up correctly?"
+### Complete Test Script:
+```python
+#!/usr/bin/env python3
+import sys
+import os
+
+print("=" * 60)
+print("DaVinci Resolve API Connection Test")
+print("=" * 60)
+
+# Check environment
+print("\n1. Checking environment variables...")
+api_path = os.getenv("RESOLVE_SCRIPT_API")
+lib_path = os.getenv("RESOLVE_SCRIPT_LIB")
+
+if api_path:
+    print(f"✅ RESOLVE_SCRIPT_API: {api_path}")
+else:
+    print("❌ RESOLVE_SCRIPT_API not set")
+
+if lib_path:
+    print(f"✅ RESOLVE_SCRIPT_LIB: {lib_path}")
+else:
+    print("❌ RESOLVE_SCRIPT_LIB not set")
+
+# Add to path
+if api_path:
+    sys.path.append(f"{api_path}/Modules/")
+
+# Try import
+print("\n2. Testing import...")
+try:
+    import DaVinciResolveScript as dvr_script
+    print("✅ DaVinciResolveScript imported successfully")
+except ImportError as e:
+    print(f"❌ Import failed: {e}")
+    exit(1)
+
+# Try connection
+print("\n3. Testing connection to Resolve...")
+try:
+    resolve = dvr_script.scriptapp("Resolve")
+    if resolve:
+        print("✅ Connected to DaVinci Resolve")
+        
+        # Get version
+        version = resolve.GetVersionString()
+        print(f"   Version: {version}")
+    else:
+        print("❌ Could not connect - is Resolve running?")
+        exit(1)
+except Exception as e:
+    print(f"❌ Connection error: {e}")
+    exit(1)
+
+# Check project
+print("\n4. Checking project...")
+project = resolve.GetProjectManager().GetCurrentProject()
+if project:
+    print(f"✅ Project open: {project.GetName()}")
+else:
+    print("⚠️ No project is open")
+    exit(0)
+
+# Check timeline
+print("\n5. Checking timeline...")
+timeline = project.GetCurrentTimeline()
+if timeline:
+    print(f"✅ Timeline open: {timeline.GetName()}")
+    
+    # Get clip info
+    clip = timeline.GetCurrentVideoItem()
+    if clip:
+        print(f"   Current clip: {clip.GetName()}")
+    else:
+        print("   ⚠️ No clip selected")
+else:
+    print("⚠️ No timeline is open")
+
+print("\n" + "=" * 60)
+print("Connection test complete!")
+print("=" * 60)
+```
+
+---
+
+## CDL Values Not Taking Effect
+
+### Problem: "I set CDL but nothing changed"
+### User Question: "Why doesn't the grade apply?"
+### Debugging Steps:
+```python
+clip = timeline.GetCurrentVideoItem()
+
+# 1. Check if on Color page
+if resolve.GetCurrentPage() != "color":
+    print("Not on Color page - switching...")
+    resolve.OpenPage("color")
+
+# 2. Check node count
+graph = clip.GetNodeGraph()
+num_nodes = graph.GetNumNodes()
+print(f"Number of nodes: {num_nodes}")
+
+if num_nodes < 1:
+    print("❌ No nodes in graph - add a node first in Resolve UI")
+    exit()
+
+# 3. Check if node is enabled
+# Note: API doesn't provide GetNodeEnabled, only SetNodeEnabled
+# Ensure node is enabled:
+graph.SetNodeEnabled(1, True)
+
+# 4. Apply CDL with verification
+result = clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.2 1.1 1.0",
+    "Offset": "0.0 0.0 0.0",
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.1"
+})
+
+# SetCDL doesn't return a value, so check node afterwards
+print("CDL applied - check Resolve UI for changes")
+```
+
+---
+
+## Working with SLOG3 Footage
+
+### Problem: "SLOG3 conversion not working"
+### User Question: "Why does my SLOG3 footage still look flat?"
+### Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+graph = clip.GetNodeGraph()
+
+# Step 1: Ensure you have the SLOG3 LUT
+project.RefreshLUTList()
+
+# Step 2: Apply conversion LUT
+lut_applied = graph.SetLUT(1, "Sony/SLog3_to_Rec709.cube")
+
+if not lut_applied:
+    print("SLOG3 LUT not found. Alternatives:")
+    print("1. Download Sony SLOG3 to Rec709 LUT")
+    print("2. Place in: /Library/Application Support/.../DaVinci Resolve/LUT/Sony/")
+    print("3. Or use manual color correction:")
+    
+    # Manual SLOG3 correction
+    clip.SetCDL({
+        "NodeIndex": 1,
+        "Slope": "2.8 2.8 2.8",      # SLOG3 needs significant contrast boost
+        "Offset": "0.0 0.0 0.0",
+        "Power": "0.6 0.6 0.6",       # Gamma adjustment
+        "Saturation": "1.15"
+    })
+else:
+    # Fine-tune after LUT
+    clip.SetCDL({
+        "NodeIndex": 1,
+        "Saturation": "1.08"
+    })
+```
+
+---
+
+## Multiple Nodes Confusion
+
+### Problem: "Which node should I use?"
+### User Question: "How do I work with multiple nodes?"
+### Best Practices:
+```python
+graph = clip.GetNodeGraph()
+num_nodes = graph.GetNumNodes()
+
+# Standard node workflow:
+# Node 1: Base correction (exposure, white balance)
+# Node 2: Creative look (LUTs, stylization)
+# Node 3: Final tweaks (vignette, sharpness)
+
+if num_nodes >= 1:
+    # Node 1: Base correction
+    clip.SetCDL({
+        "NodeIndex": 1,
+        "Slope": "1.0 1.0 1.0",      # Neutral
+        "Offset": "0.0 0.0 0.0",
+        "Power": "1.0 1.0 1.0",
+        "Saturation": "1.0"
+    })
+
+if num_nodes >= 2:
+    # Node 2: Creative LUT
+    graph.SetLUT(2, "Cinematic/Teal_Orange.cube")
+
+if num_nodes >= 3:
+    # Node 3: Final saturation
+    clip.SetCDL({
+        "NodeIndex": 3,
+        "Saturation": "1.15"
+    })
+
+# Check node labels for clarity
+for i in range(1, num_nodes + 1):
+    label = graph.GetNodeLabel(i)
+    print(f"Node {i}: {label}")
+```
+
+---
+
+## API Returns None
+
+### Problem: "Method returns None instead of expected value"
+### User Question: "Why am I getting None?"
+### Common Causes:
+```python
+# Always check each step
+
+# 1. Resolve connection
+resolve = dvr_script.scriptapp("Resolve")
+if not resolve:
+    print("❌ Resolve not connected")
+    exit()
+
+# 2. Project
+project = resolve.GetProjectManager().GetCurrentProject()
+if not project:
+    print("❌ No project open")
+    exit()
+
+# 3. Timeline
+timeline = project.GetCurrentTimeline()
+if not timeline:
+    print("❌ No timeline open")
+    exit()
+
+# 4. Current clip
+clip = timeline.GetCurrentVideoItem()
+if not clip:
+    print("❌ No clip selected")
+    # Try getting clips from track instead
+    clips = timeline.GetItemListInTrack("video", 1)
+    if clips:
+        clip = clips[0]
+        print(f"✅ Using first clip: {clip.GetName()}")
+    else:
+        exit()
+
+print("✅ All objects valid - ready to proceed")
+```
+
+---
+
+## Script Not Appearing in Menu
+
+### Problem: "My script doesn't show up in Workspace → Scripts"
+### User Question: "Where is my script?"
+### Solutions:
+
+**Check Script Location:**
+```bash
+# macOS - should be in one of these folders:
+ls "/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Comp/"
+ls "$HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Comp/"
+
+# Scripts in "Comp" folder appear in Fusion page
+# Scripts in "Color" folder appear in Color page
+# Scripts in "Utility" folder appear in all pages
+```
+
+**File Permissions:**
+```bash
+# Ensure script is executable
+chmod +x your_script.py
+
+# Ensure proper file extension
+# .py for Python scripts
+# .lua for Lua scripts
+```
+
+**Restart Resolve:**
+DaVinci Resolve scans Scripts folder on startup. After adding new scripts:
+1. Close DaVinci Resolve completely
+2. Reopen DaVinci Resolve
+3. Check Workspace → Scripts menu
+
+---
+
+## Debugging Tips
+
+### User Question: "How do I debug my scripts?"
+### Debugging Workflow:
+```python
+import logging
+
+# Set up logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='/tmp/davinci_script.log'
+)
+
+logger = logging.getLogger(__name__)
+
+# Use throughout script
+logger.debug("Starting script execution")
+
+try:
+    resolve = dvr_script.scriptapp("Resolve")
+    logger.debug(f"Resolve connected: {resolve is not None}")
+    
+    # ... your code
+    
+    logger.info("Script completed successfully")
+except Exception as e:
+    logger.error(f"Script failed: {e}", exc_info=True)
+
+# Check log file:
+# tail -f /tmp/davinci_script.log
+```
+
+---
+
+## Quick Reference: Error Messages
+
+| Error | Likely Cause | Solution |
+|-------|--------------|----------|
+| "Could not connect" | Resolve not running | Start DaVinci Resolve |
+| "No project open" | Need to open project | Open/create project in Resolve |
+| "No timeline open" | Need timeline | Open timeline in Resolve |
+| "No clip selected" | Need to select clip | Click clip in timeline or use GetItemListInTrack |
+| "NodeIndex out of range" | Using 0-based indexing | Use 1-based indexing (1, 2, 3...) |
+| "LUT not found" | Wrong path | Use RefreshLUTList() and check path |
+| "Module not found" | Environment not set | Set RESOLVE_SCRIPT_API and PYTHONPATH |
+| SetCDL() silent fail | Wrong format | Use strings for RGB: "1.0 1.0 1.0" |

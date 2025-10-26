@@ -1,0 +1,312 @@
+# Color Grading Operations - Training Examples
+
+## Warming Up Footage
+
+### User Question: "Make this clip warmer"
+### Intent: Add warm tones, reduce blue/cyan tones
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 0.95 0.9",      # Reduce green and blue in highlights
+    "Offset": "0.02 0.01 -0.01",   # Add red/orange to shadows, remove blue
+    "Power": "1.0 1.0 1.0",        # No midtone adjustment
+    "Saturation": "1.05"           # Slight saturation boost
+})
+```
+### Explanation: Reducing blue in Slope affects highlights, adding red/yellow to Offset warms shadows. This creates an overall warmer look.
+
+---
+
+## Cooling Down Footage
+
+### User Question: "Make this clip cooler" or "Add a cold look"
+### Intent: Add cool/blue tones, reduce warmth
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "0.95 0.98 1.0",      # Reduce red, slight reduce green, normal blue
+    "Offset": "-0.01 0.0 0.02",     # Remove red from shadows, add blue
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.0"
+})
+```
+### Explanation: Adding blue and removing red creates a cool, clinical look often used for thriller/sci-fi genres.
+
+---
+
+## Cinematic Look (Teal & Orange)
+
+### User Question: "Make this look cinematic" or "Apply teal and orange look"
+### Intent: Classic Hollywood blockbuster color grade
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+graph = clip.GetNodeGraph()
+
+# First apply a cinematic LUT if available
+graph.SetLUT(1, "Cinematic/Teal_Orange.cube")
+
+# Then fine-tune with CDL
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 0.98 0.95",      # Slightly reduce cyan/blue in highlights
+    "Offset": "0.0 0.0 0.0",
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.15"            # Boost saturation for punch
+})
+```
+### Explanation: Teal & orange creates separation between skin tones (orange) and backgrounds (teal/blue).
+
+---
+
+## SLOG3 to Rec709 Correction
+
+### User Question: "Convert this SLOG3 footage" or "Fix this Sony log footage"
+### Intent: Transform Sony SLOG3 log profile to viewable Rec709
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+graph = clip.GetNodeGraph()
+
+# Apply SLOG3 to Rec709 LUT
+graph.SetLUT(1, "Sony/SLog3_to_Rec709.cube")
+
+# Fine-tune the conversion
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 1.0 1.0",
+    "Offset": "0.0 0.0 0.0",
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.08"            # Slight saturation boost post-conversion
+})
+```
+### Explanation: SLOG3 footage is flat and needs LUT conversion plus saturation boost for natural look.
+
+---
+
+## Increase Contrast
+
+### User Question: "Add more contrast" or "Make it punchier"
+### Intent: Increase separation between highlights and shadows
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.2 1.2 1.2",        # Brighten highlights
+    "Offset": "-0.05 -0.05 -0.05",  # Darken shadows
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.1"
+})
+```
+### Explanation: Increasing Slope lifts highlights while negative Offset crushes blacks, creating contrast.
+
+---
+
+## Reduce Contrast (Soften)
+
+### User Question: "Soften the look" or "Reduce contrast"
+### Intent: Create softer, more muted look
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "0.9 0.9 0.9",        # Reduce highlights
+    "Offset": "0.03 0.03 0.03",     # Lift shadows
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "0.95"            # Slight desaturation
+})
+```
+### Explanation: Bringing highlights and shadows closer together creates a softer, dreamlike quality.
+
+---
+
+## Desaturate (Black and White)
+
+### User Question: "Make this black and white" or "Remove all color"
+### Intent: Complete desaturation
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 1.0 1.0",
+    "Offset": "0.0 0.0 0.0",
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "0.0"             # Complete desaturation
+})
+```
+### Explanation: Setting saturation to 0.0 removes all color information.
+
+---
+
+## Boost Saturation
+
+### User Question: "Make colors more vibrant" or "Increase saturation"
+### Intent: Make colors pop more
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 1.0 1.0",
+    "Offset": "0.0 0.0 0.0",
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.3"             # Strong saturation boost
+})
+```
+### Explanation: Values above 1.0 increase saturation. Be careful going above 1.3 to avoid oversaturation.
+
+---
+
+## Film Emulation - Kodak 2383
+
+### User Question: "Make it look like film" or "Apply Kodak film look"
+### Intent: Emulate classic Kodak film stock
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+graph = clip.GetNodeGraph()
+
+# Apply film emulation LUT
+graph.SetLUT(1, "Film/Kodak_2383_D65.cube")
+
+# Subtle adjustments
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 0.98 0.95",      # Slight warmth
+    "Offset": "0.0 0.0 0.0",
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.1"
+})
+```
+### Explanation: Film stocks have characteristic color responses, captured in LUTs.
+
+---
+
+## Night Scene (Moonlight)
+
+### User Question: "Make this look like moonlight" or "Create night look"
+### Intent: Cool, desaturated night scene
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "0.7 0.8 1.0",        # Darken red/green, normal blue
+    "Offset": "-0.05 -0.03 0.0",    # Crush shadows, maintain blue
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "0.6"             # Heavy desaturation
+})
+```
+### Explanation: Moonlight is cool and desaturated. We preserve blue channel while crushing others.
+
+---
+
+## Golden Hour / Sunset Look
+
+### User Question: "Add golden hour look" or "Make it look like sunset"
+### Intent: Warm, glowing sunset colors
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.1 1.0 0.85",       # Boost reds, reduce blues
+    "Offset": "0.05 0.02 -0.02",    # Add orange to shadows
+    "Power": "0.95 0.98 1.0",       # Lift red/green midtones
+    "Saturation": "1.2"             # Increase saturation for glow
+})
+```
+### Explanation: Golden hour has strong orange/red tones with reduced blue, high saturation.
+
+---
+
+## Color Match to Reference
+
+### User Question: "Match this clip to clip B" or "Copy the color from the previous shot"
+### Intent: Match color grade between shots
+### API Solution:
+```python
+# First, analyze reference clip
+timeline.SetCurrentTimecode("00:10:00:00")  # Navigate to reference
+ref_clip = timeline.GetCurrentVideoItem()
+ref_graph = ref_clip.GetNodeGraph()
+
+# Get LUT from reference (if any)
+ref_lut = ref_graph.GetLUT(1)
+
+# Navigate to target clip
+timeline.SetCurrentTimecode("00:05:00:00")
+target_clip = timeline.GetCurrentVideoItem()
+target_graph = target_clip.GetNodeGraph()
+
+# Apply same LUT
+if ref_lut:
+    target_graph.SetLUT(1, ref_lut)
+
+# Note: CDL values can't be retrieved via API, must be set manually
+```
+### Explanation: While we can copy LUTs, CDL values aren't retrievable via current API.
+
+---
+
+## Lift Shadows (Brighten Dark Areas)
+
+### User Question: "Brighten the shadows" or "Lift the blacks"
+### Intent: Make shadow areas more visible
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 1.0 1.0",
+    "Offset": "0.05 0.05 0.05",     # Lift all shadows equally
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.0"
+})
+```
+### Explanation: Positive Offset values lift shadow detail without affecting highlights.
+
+---
+
+## Crush Blacks (Increase Black Point)
+
+### User Question: "Crush the blacks" or "Make blacks darker"
+### Intent: Deepen black levels for more dramatic look
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 1.0 1.0",
+    "Offset": "-0.08 -0.08 -0.08",  # Push blacks down
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.0"
+})
+```
+### Explanation: Negative Offset crushes blacks, creating more dramatic contrast.
+
+---
+
+## Bleach Bypass Look
+
+### User Question: "Apply bleach bypass" or "Make it gritty"
+### Intent: High contrast, desaturated, gritty look
+### API Solution:
+```python
+clip = timeline.GetCurrentVideoItem()
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.3 1.3 1.3",        # High contrast
+    "Offset": "-0.05 -0.05 -0.05",  # Crush blacks
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "0.7"             # Desaturate for gritty look
+})
+```
+### Explanation: Bleach bypass was a film process creating high contrast, low saturation looks.

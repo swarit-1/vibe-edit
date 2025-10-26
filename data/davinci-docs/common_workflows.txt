@@ -1,0 +1,371 @@
+# Common DaVinci Resolve Workflows
+
+## Basic Setup Workflow
+
+### User Question: "How do I start working with a clip?"
+### Workflow:
+```python
+import DaVinciResolveScript as dvr_script
+
+# 1. Connect to Resolve
+resolve = dvr_script.scriptapp("Resolve")
+if not resolve:
+    print("DaVinci Resolve is not running")
+    exit()
+
+# 2. Get current project
+project = resolve.GetProjectManager().GetCurrentProject()
+if not project:
+    print("No project is open")
+    exit()
+
+# 3. Get current timeline
+timeline = project.GetCurrentTimeline()
+if not timeline:
+    print("No timeline is open")
+    exit()
+
+# 4. Get current clip
+clip = timeline.GetCurrentVideoItem()
+if not clip:
+    print("No clip is selected - please select a clip in the timeline")
+    exit()
+
+print(f"Ready to work with: {clip.GetName()}")
+```
+
+---
+
+## Apply Grade to All Clips in Timeline
+
+### User Question: "Apply this grade to all clips"
+### Workflow:
+```python
+# Get all video clips on track 1
+video_clips = timeline.GetItemListInTrack("video", 1)
+
+# Apply CDL to each clip
+for clip in video_clips:
+    clip.SetCDL({
+        "NodeIndex": 1,
+        "Slope": "1.1 1.0 0.95",
+        "Offset": "0.0 0.0 0.0",
+        "Power": "1.0 1.0 1.0",
+        "Saturation": "1.1"
+    })
+    print(f"Applied grade to: {clip.GetName()}")
+```
+
+---
+
+## Check and Switch to Color Page
+
+### User Question: "How do I make sure I'm on the color page?"
+### Workflow:
+```python
+current_page = resolve.GetCurrentPage()
+print(f"Current page: {current_page}")
+
+if current_page != "color":
+    resolve.OpenPage("color")
+    print("Switched to Color page")
+```
+
+---
+
+## Get Clip Information
+
+### User Question: "Tell me about this clip"
+### Workflow:
+```python
+clip = timeline.GetCurrentVideoItem()
+
+# Get clip name
+name = clip.GetName()
+
+# Get media pool item (source)
+media_item = clip.GetMediaPoolItem()
+
+# Get node graph
+graph = clip.GetNodeGraph()
+num_nodes = graph.GetNumNodes()
+
+print(f"Clip: {name}")
+print(f"Number of nodes: {num_nodes}")
+
+# Check if LUT is applied
+if num_nodes > 0:
+    lut = graph.GetLUT(1)
+    print(f"LUT on node 1: {lut if lut else 'None'}")
+```
+
+---
+
+## Apply LUT with Fallback
+
+### User Question: "Apply a LUT safely"
+### Workflow:
+```python
+clip = timeline.GetCurrentVideoItem()
+graph = clip.GetNodeGraph()
+
+# Try to apply LUT
+lut_path = "Cinematic/Teal_Orange.cube"
+
+try:
+    result = graph.SetLUT(1, lut_path)
+    if result:
+        print(f"Successfully applied LUT: {lut_path}")
+    else:
+        print(f"Failed to apply LUT. Trying alternative...")
+        # Try absolute path or different LUT
+        alt_lut = "Film/Kodak_2383.cube"
+        graph.SetLUT(1, alt_lut)
+except Exception as e:
+    print(f"Error applying LUT: {e}")
+```
+
+---
+
+## Batch Process Multiple Clips
+
+### User Question: "Process multiple clips with different grades"
+### Workflow:
+```python
+# Get all clips
+all_clips = timeline.GetItemListInTrack("video", 1)
+
+# Define different grades
+grades = {
+    "day_exterior": {
+        "Slope": "1.0 0.98 0.95",
+        "Saturation": "1.15"
+    },
+    "day_interior": {
+        "Slope": "1.05 1.0 0.95",
+        "Saturation": "1.1"
+    },
+    "night": {
+        "Slope": "0.8 0.85 1.0",
+        "Saturation": "0.7"
+    }
+}
+
+# Apply grades based on clip name
+for clip in all_clips:
+    name = clip.GetName().lower()
+    
+    if "ext" in name or "outdoor" in name:
+        grade = grades["day_exterior"]
+    elif "night" in name:
+        grade = grades["night"]
+    else:
+        grade = grades["day_interior"]
+    
+    clip.SetCDL({
+        "NodeIndex": 1,
+        "Slope": grade["Slope"],
+        "Offset": "0.0 0.0 0.0",
+        "Power": "1.0 1.0 1.0",
+        "Saturation": grade["Saturation"]
+    })
+```
+
+---
+
+## Reset Grade on Current Clip
+
+### User Question: "Reset the color grade" or "Remove all grading"
+### Workflow:
+```python
+clip = timeline.GetCurrentVideoItem()
+graph = clip.GetNodeGraph()
+
+# Reset CDL to neutral
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 1.0 1.0",
+    "Offset": "0.0 0.0 0.0",
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.0"
+})
+
+# Remove LUT (set to empty)
+# Note: There's no direct "remove LUT" API call
+# Best practice is to disable the node or set neutral LUT
+graph.SetNodeEnabled(1, False)
+```
+
+---
+
+## Navigate Timeline and Process Clips
+
+### User Question: "Process clips in a time range"
+### Workflow:
+```python
+# Set timeline position to start
+timeline.SetCurrentTimecode("00:00:00:00")
+
+# Get all clips on video track 1
+clips = timeline.GetItemListInTrack("video", 1)
+
+# Process each clip
+for clip in clips:
+    # Get clip properties
+    start = clip.GetStart()
+    end = clip.GetEnd()
+    duration = clip.GetDuration()
+    
+    print(f"Processing {clip.GetName()}")
+    print(f"  Start: {start}, End: {end}, Duration: {duration}")
+    
+    # Apply grade
+    clip.SetCDL({
+        "NodeIndex": 1,
+        "Saturation": "1.1"
+    })
+```
+
+---
+
+## Error Handling Pattern
+
+### User Question: "How do I handle errors properly?"
+### Best Practice:
+```python
+def apply_grade_safely(timeline):
+    """Apply grade with comprehensive error handling"""
+    try:
+        # Check if clip is selected
+        clip = timeline.GetCurrentVideoItem()
+        if not clip:
+            return {"success": False, "error": "No clip selected"}
+        
+        # Get node graph
+        graph = clip.GetNodeGraph()
+        if not graph:
+            return {"success": False, "error": "Could not access node graph"}
+        
+        # Check number of nodes
+        num_nodes = graph.GetNumNodes()
+        if num_nodes < 1:
+            return {"success": False, "error": "No nodes in graph"}
+        
+        # Apply grade
+        clip.SetCDL({
+            "NodeIndex": 1,
+            "Saturation": "1.2"
+        })
+        
+        return {
+            "success": True,
+            "clip_name": clip.GetName(),
+            "nodes": num_nodes
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Unexpected error: {str(e)}"
+        }
+
+# Usage
+result = apply_grade_safely(timeline)
+if result["success"]:
+    print(f"Grade applied to {result['clip_name']}")
+else:
+    print(f"Error: {result['error']}")
+```
+
+---
+
+## Working with Multiple Nodes
+
+### User Question: "Apply different grades to multiple nodes"
+### Workflow:
+```python
+clip = timeline.GetCurrentVideoItem()
+graph = clip.GetNodeGraph()
+
+num_nodes = graph.GetNumNodes()
+
+# Node 1: Base correction
+clip.SetCDL({
+    "NodeIndex": 1,
+    "Slope": "1.0 1.0 1.0",
+    "Offset": "0.0 0.0 0.0",
+    "Power": "1.0 1.0 1.0",
+    "Saturation": "1.0"
+})
+
+# Node 2: Creative look (if exists)
+if num_nodes >= 2:
+    clip.SetCDL({
+        "NodeIndex": 2,
+        "Slope": "1.1 0.98 0.95",
+        "Saturation": "1.15"
+    })
+
+# Node 3: Final adjustments (if exists)
+if num_nodes >= 3:
+    clip.SetCDL({
+        "NodeIndex": 3,
+        "Offset": "0.02 0.0 -0.01",
+        "Saturation": "1.0"
+    })
+```
+
+---
+
+## Timeline Information Query
+
+### User Question: "What's in this timeline?"
+### Workflow:
+```python
+# Get timeline info
+timeline_name = timeline.GetName()
+video_track_count = timeline.GetTrackCount("video")
+audio_track_count = timeline.GetTrackCount("audio")
+
+print(f"Timeline: {timeline_name}")
+print(f"Video tracks: {video_track_count}")
+print(f"Audio tracks: {audio_track_count}")
+
+# Get clips on each video track
+for track_num in range(1, video_track_count + 1):
+    clips = timeline.GetItemListInTrack("video", track_num)
+    print(f"\nVideo Track {track_num}: {len(clips)} clips")
+    for clip in clips:
+        print(f"  - {clip.GetName()}")
+```
+
+---
+
+## Refresh LUT List
+
+### User Question: "I added new LUTs, how do I use them?"
+### Workflow:
+```python
+# Refresh the LUT list so new LUTs are available
+project.RefreshLUTList()
+
+# Now you can apply the new LUT
+clip = timeline.GetCurrentVideoItem()
+graph = clip.GetNodeGraph()
+graph.SetLUT(1, "NewFolder/MyNewLUT.cube")
+```
+
+---
+
+## Compare Before/After
+
+### User Question: "Show me before and after my changes"
+### Note: 
+DaVinci Resolve API doesn't provide direct screenshot/render capabilities.
+Best approach is to:
+1. Export still frames before changes
+2. Make changes
+3. Export still frames after changes
+4. Compare externally
+
+The API focuses on grade application, not visual comparison.
