@@ -27,11 +27,11 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 # Path Configuration
 # --------------------------------------------------------------------------
 # Input PDFs (DaVinci Resolve manuals)
-PDF_DIR = "./code/data/pdfs"
+PDF_DIR = "./data/pdfs"
 # Extracted plain-text output directory
-TXT_DIR = "./code/data/resolve"
+TXT_DIR = "./data/resolve"
 # Output directory for the FAISS vectorstore
-VSTORE_DIR = "./code/vectorstore"
+VSTORE_DIR = "./vectorstore"
 
 # Create necessary directories if they do not exist
 os.makedirs(TXT_DIR, exist_ok=True)
