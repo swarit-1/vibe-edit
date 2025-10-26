@@ -3,14 +3,12 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from langchain.retrievers import ContextualCompressionRetriever
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_nvidia_ai_endpoints import ChatNVIDIA, NVIDIAEmbeddings, NVIDIARerank
 from langgraph.prebuilt import create_react_agent
 
-_LOGGER = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 # Data Ingestion Configuration
 DATA_DIR = Path(__file__).parent.parent / "data" / "it-knowledge-base"
@@ -47,7 +45,6 @@ kb_retriever = vectordb.as_retriever(
 )
 
 # Create a document retriever and reranker
-kb_retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": 6})
 reranker = NVIDIARerank(model=RETRIEVER_RERANK_MODEL)
 
 # combine those to create the final document retriever
@@ -59,25 +56,41 @@ RETRIEVER = ContextualCompressionRetriever(
 # Create the retriever tool for agentic use
 RETRIEVER_TOOL = create_retriever_tool(
     retriever=RETRIEVER,
-    name="company_llc_it_knowledge_base",
+    name="davinci_resolve_manual",
     description=(
-        "Search the internal IT knowledge base for Company LLC IT related questions and policies."
+    "Search the DaVinci Resolve user manual for video editing instructions, troubleshooting steps, and workflow tips."
     ),
 )
 
 # Define the LLM model to be used for this agent
-llm = ...
-llm = ChatNVIDIA(model="nvidia/nemotron-mini-4b-instruct", temperature=0.7, api_key = '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')
+llm = ChatNVIDIA(
+    model=LLM_MODEL,
+    temperature=0.7,
+    top_p=0.95,
+    max_tokens=8192,
+    api_key=os.getenv("NGC_API_KEY")
+)
 
 # Define the system prompt for the agent
 SYSTEM_PROMPT = (
-    "You are an IT help desk support agent.\n"
-    "- Use the 'company_llc_it_knowledge_base' tool for questions likely covered by the internal IT knowledge base.\n"
-    "- Always write grounded answers. If unsure, say you don't know.\n"
-    "- Cite sources inline using [KB] for knowledge base snippets.\n"
-    "- If the knowledge base doesn't contain sufficient information, clearly state what information is missing.\n"
-    "- Keep answers brief, to the point, and conversational."
+    "You are a professional video editing assistant specialized in DaVinci Resolve.\n"
+    "- Use the 'davinci_resolve_manual' tool for technical questions about DaVinci Resolve features or workflows.\n"
+    "- Base your answers strictly on retrieved manual content.\n"
+    "- If unsure or if information is missing, clearly say you don't know.\n"
+    "- Keep answers concise, actionable, and user-friendly.\n"
+    "- When quoting from the manual, cite sources inline using [Manual]."
 )
 
+
 # Create the ReAct agent
-AGENT = ...
+AGENT = create_react_agent(
+    model=llm,
+    tools=[RETRIEVER_TOOL],
+    prompt=SYSTEM_PROMPT
+)
+
+if __name__ == "__main__":
+    question = "How do I stabilize a shaky clip in DaVinci Resolve?"
+    print("User:", question)
+    response = AGENT.invoke({"input": question})
+    print("Agent:", response["output"])
