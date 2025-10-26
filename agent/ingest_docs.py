@@ -23,8 +23,6 @@ from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings  # NVIDIA embedding m
 # Load environment variables from .env file in the project root
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-
-
 # --------------------------------------------------------------------------
 # Path Configuration
 # --------------------------------------------------------------------------
@@ -81,8 +79,6 @@ def pdf_to_text(pdf_path, txt_path):
     # Write cleaned text to file
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(cleaned_text)
-
-
 
 # --------------------------------------------------------------------------
 # Extract and Save Text Files
